@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "hashTable.h"
 
 // Prototype declarations
@@ -13,7 +14,8 @@ enum bar_color
     white
 };
 
-char *character_encoding[11] = {
+const size_t number_of_characters = 13;
+char *character_encoding[13] = {
     "10000", // 0
     "10010", // 1
     "00011", // 2
@@ -26,14 +28,18 @@ char *character_encoding[11] = {
     "00001", // 9
     "00100", // -
     "00110", // Start/Stop
-    "01100", // Start/Stop reverse
+    "01100", // Start/Stop reverse (equals to 4)
+};
+char character_value[13] = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-',
+    'S', 's' // Start/Stop
 };
 
 // Global variables
 enum bar_color color_flag = black;
 const size_t encoding_length = 5;
 
-// Array storing two values, the wide
+// Array storing two values, [ wide, narrow ]
 int *wide_and_narrow;
 
 int main()
@@ -160,18 +166,205 @@ This function prints the codebar
 }
 
 char get_character(int *starting_position)
+{
+    // 0
+    if (*starting_position == 0)
+    {
+        // 0 0
+        if (*(starting_position + 1) == 0)
+        {
+            // 0 0 0
+            if (*(starting_position + 2) == 0)
+            {
+                // 0 0 0 0
+                if (*(starting_position + 3) == 0)
+                {
+                    // 0 0 0 0 1
+                    if (*(starting_position + 4) == 1)
+                        return '9';
+                }
+                // 0 0 0 1
+                else
+                {
+                    // 0 0 0 1 0
+                    if (*(starting_position + 4) == 0)
+                    {
+                    }
+                    // 0 0 0 1 1
+                    else
+                        return '2';
+                }
+            }
+            // 0 0 1
+            else
+            {
+                // 0 0 1 0
+                if (*(starting_position + 3) == 0)
+                {
+                    // 0 0 1 0 0
+                    if (*(starting_position + 4) == 0)
+                        return '-';
+                    // 0 0 1 0 1
+                    else
+                        return '6';
+                }
+                // 0 0 1 1
+                else
+                {
+                    if (*(starting_position + 4) == 0)
+                        return 'S';
+                }
+            }
+        }
+        // 0 1
+        else
+        {
+            // 0 1 0
+            if (*(starting_position + 2) == 0)
+            {
+                // 0 1 0 0
+                if (*(starting_position + 3) == 0)
+                {
+                    // 0 1 0 0 0
+                    if (*(starting_position + 4) == 0)
+                    {
+                    }
+                    // 0 1 0 0 1
+                    else
+                        return '7';
+                }
+            }
+            // 0 1 1
+            else
+            {
+                // 0 1 1 0
+                if (*(starting_position + 3) == 0)
+                {
+                    // 0 1 1 0 0
+                    if (*(starting_position + 4) == 0)
+                        return '4';
+                }
+            }
+        }
+    }
+    // 1
+    else
+    {
+        // 1 0
+        if (*(starting_position + 1) == 0)
+        {
+            // 1 0 0
+            if (*(starting_position + 2) == 0)
+            {
+                // 1 0 0 0
+                if (*(starting_position + 3) == 0)
+                {
+                    // 1 0 0 0 0
+                    if (*(starting_position + 4) == 0)
+                        return '0';
+                    // 1 0 0 0 1
+                    else
+                        return '8';
+                }
+                // 1 0 0 1
+                else
+                {
+                    // 1 0 0 1 0
+                    if (*(starting_position + 4) == 0)
+                        return '1';
+                }
+            }
+            // 1 0 1
+            else
+            {
+                // 1 0 1 0
+                if (*(starting_position + 3) == 0)
+                {
+                    // 1 0 1 0 0
+                    if (*(starting_position + 4) == 0)
+                        return '3';
+                }
+            }
+        }
+        // 1 1
+        else
+        {
+            // 1 1 0
+            if (*(starting_position + 2) == 0)
+            {
+                // 1 1 0 0
+                if (*(starting_position + 3) == 0)
+                {
+                    // 1 1 0 0 0
+                    if (*(starting_position + 4) == 0)
+                        return '5';
+                }
+            }
+        }
+    }
+
+    return 'X';
+}
+
+char get_characterr(int *starting_position)
 /*
 This function decodes one single character and returns it's value.
+If none of the characters in the table were identified, returns an 'X'.
+
+@param *starting_position: Pointer to the first character
 */
 {
+    // Start by converting the encoding values in the array to a string
+    char code[encoding_length + 1];
+    int i;
+    for (i = 0; i < encoding_length; i++)
+    {
+        printf("%d ", *(starting_position + i));
+    }
+    printf("\nThe value of i%d ", i);
+    printf("\n");
+
     for (int i = 0; i < encoding_length; i++)
     {
+        if (*(starting_position + i) == *wide_and_narrow)
+            code[i] = '1';
+        else if (*(starting_position + i) == *(wide_and_narrow + 1))
+            code[i] = '0';
     }
+
+    printf("%s\n", code);
+
+    // Compare with the table and get the character
+    for (int i = 0; i < number_of_characters; i++)
+    {
+        if (strcmp(character_encoding[i], code) == 0)
+        {
+            return character_value[i];
+        }
+    }
+
+    return 'X';
 }
 
 int scan_barcode(int *barcode, size_t size)
 {
-    get_character(&barcode[0]);
+    printf("Before swapping\n");
+
+    char a = get_character(barcode);
+    printf("%c\n", a);
+    // Check if the barcode is reversed (The Start/Stop code coincides with the 4)
+    if (get_character(barcode) == character_value[4])
+    {
+        // Reverse the barcode
+        for (int i = 0; i < size / 2; i++)
+            swap(&barcode[i], &barcode[size - 1 - i]);
+    }
+
+    printf("After swapping\n");
+    print_codebar(barcode, size);
+    get_character(barcode);
+
+    return 1;
 }
 
 int rectify_codebar(int *barcode, size_t size)
