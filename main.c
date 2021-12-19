@@ -7,7 +7,8 @@ int rectify_codebar(int *barcode, size_t size);
 void print_codebar(int *barcode, size_t size);
 char get_character(int *starting_position);
 int get_char_weight(char character);
-char *scan_barcode(int *barcode, size_t size);
+void copy_string(char *source, char *destination, size_t size);
+void scan_barcode(int *barcode, char *output, size_t size);
 
 enum bar_color
 {
@@ -141,9 +142,10 @@ int main()
         10,
     };
 
+    char output[200];
     rectify_codebar(test_data_1, test_size_1);
-    char *response = scan_barcode(test_data_1, test_size_1);
-    printf("The response is: %s\n", response);
+    scan_barcode(test_data_1, output, test_size_1);
+    printf("%s\n", output);
 }
 void print_codebar(int *barcode, size_t size)
 /*
@@ -333,7 +335,7 @@ Used for calculating C and K error detection
     }
 }
 
-char *scan_barcode(int *barcode, size_t size)
+void scan_barcode(int *barcode, char *output, size_t size)
 /*
 This function scans a barcode
 
@@ -350,7 +352,10 @@ This function scans a barcode
     }
 
     if (get_character(barcode) != character_value[11])
-        return error_messages[2];
+    {
+        copy_string(error_messages[2], output, strlen(error_messages[2]));
+        return;
+    }
 
     // Number of characters in the barcode
     size_t char_nums = (size - encoding_length) / (encoding_length + 1);
@@ -362,7 +367,10 @@ This function scans a barcode
     {
         // The character-separating narrow light bar was not detected
         if (barcode[i - 1] != 0)
-            return error_messages[2];
+        {
+            copy_string(error_messages[2], output, strlen(error_messages[2]));
+            return;
+        }
 
         char next_char = get_character(&barcode[i]);
 
@@ -370,7 +378,11 @@ This function scans a barcode
         if (i == size - 2 * (encoding_length + 1) - encoding_length)
         {
             if (next_char == character_value[10])
-                return error_messages[0];
+            {
+                copy_string(error_messages[0], output, strlen(error_messages[0]));
+                return;
+            }
+
             int expected_C = 0;
             for (int j = 1; j <= code_index; j++)
             {
@@ -382,14 +394,20 @@ This function scans a barcode
 
             // Using the weight in order to compare two integers
             if (expected_C != get_char_weight(next_char))
-                return error_messages[0];
+            {
+                copy_string(error_messages[0], output, strlen(error_messages[0]));
+                return;
+            }
         }
 
         // K checking
         else if (i == size - encoding_length - (encoding_length + 1))
         {
             if (next_char == character_value[10])
-                return error_messages[1];
+            {
+                copy_string(error_messages[1], output, strlen(error_messages[1]));
+                return;
+            }
 
             int expected_K = 0;
             // The C character us excluded
@@ -404,12 +422,18 @@ This function scans a barcode
 
             // Using the weight in order to compare two integers
             if (expected_K != get_char_weight(next_char))
-                return error_messages[1];
+            {
+                copy_string(error_messages[1], output, strlen(error_messages[1]));
+                return;
+            }
         }
 
         // Check if the last character is a start/stop character
         else if (i == size - encoding_length && next_char != character_value[11])
-            return error_messages[2];
+        {
+            copy_string(error_messages[2], output, strlen(error_messages[2]));
+            return;
+        }
 
         // Add each character to the response
         code[code_index] = next_char;
@@ -417,9 +441,7 @@ This function scans a barcode
     }
 
     code[code_index - 3] = '\0';
-
-    printf("The returning code is: %s\n", code);
-    return "The code";
+    copy_string(code, output, strlen(code));
 }
 
 int rectify_codebar(int *barcode, size_t size)
@@ -448,11 +470,8 @@ upto 5 percent of error.
 
     // Check if the wide bar is two times wider than the narrow bar
     if (*wide_and_narrow != *(wide_and_narrow + 1) * 2)
-    {
         // Maybe it is a badcode
-        printf("Maybe it is a bad code, I don't know and I have to test it\n");
         return 0;
-    }
 
     // Rectify all width with errors
     for (int i = 0; i < size; i++)
@@ -473,4 +492,18 @@ upto 5 percent of error.
     }
 
     return 1;
+}
+
+void copy_string(char *source, char *destination, size_t size)
+/*
+Copy a string to another
+*/
+{
+    int i = 0;
+    for (i = 0; i < size; i++)
+    {
+        *(destination + i) = *(source + i);
+    }
+
+    *(destination + i) = '\0';
 }
