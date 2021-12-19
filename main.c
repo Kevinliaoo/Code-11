@@ -380,6 +380,7 @@ This function scans a barcode
             }
             expected_C %= 11;
 
+            // Using the weight in order to compare two integers
             if (expected_C != get_char_weight(next_char))
                 return error_messages[0];
         }
@@ -389,23 +390,21 @@ This function scans a barcode
         {
             if (next_char == character_value[10])
                 return error_messages[1];
+
             int expected_K = 0;
-            printf("Im going to print each char\n");
+            // The C character us excluded
+            int n = code_index - 1;
             for (int j = 1; j <= code_index; j++)
             {
                 int weight = get_char_weight(code[j - 1]);
-                printf("The char %d is: %c weight: %d\n", j, code[j - 1], weight);
-                int number = ((code_index - j + 1) % 9 + 1) * weight;
+                int number = ((n - j + 1) % 9 + 1) * weight;
                 expected_K += number;
             }
             expected_K %= 11;
 
-            printf("The value of the expected K is: %d\n", expected_K);
-
+            // Using the weight in order to compare two integers
             if (expected_K != get_char_weight(next_char))
                 return error_messages[1];
-
-            printf("The expected K value is: %d, and %c was receiverd\n", expected_K, next_char);
         }
 
         // Check if the last character is a start/stop character
@@ -417,10 +416,9 @@ This function scans a barcode
         code_index++;
     }
 
-    code[code_index - 1] = '\0';
+    code[code_index - 3] = '\0';
 
-    printf("The final code is: %s\n", code);
-
+    printf("The returning code is: %s\n", code);
     return "The code";
 }
 
