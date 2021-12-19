@@ -6,7 +6,8 @@
 int rectify_codebar(int *barcode, size_t size);
 void print_codebar(int *barcode, size_t size);
 char get_character(int *starting_position);
-int scan_barcode(int *barcode, size_t size);
+int get_char_weight(char character);
+char *scan_barcode(int *barcode, size_t size);
 
 enum bar_color
 {
@@ -20,6 +21,11 @@ char character_value[13] = {
     'S', // Start/Stop
     'X'  // Not found
 };
+
+char *error_messages[3] = {
+    "bad C",
+    "bad K",
+    "bad code"};
 
 // Global variables
 enum bar_color color_flag = black;
@@ -136,7 +142,8 @@ int main()
     };
 
     rectify_codebar(test_data_1, test_size_1);
-    scan_barcode(test_data_1, test_size_1);
+    char *response = scan_barcode(test_data_1, test_size_1);
+    printf("The response is: %s\n", response);
 }
 void print_codebar(int *barcode, size_t size)
 /*
@@ -290,10 +297,50 @@ If none of the characters in the table were identified, returns an 'X'.
     return character_value[12];
 }
 
-int scan_barcode(int *barcode, size_t size)
+int get_char_weight(char character)
+/*
+This function returns the weight associated with each character.
+Used for calculating C and K error detection
+*/
 {
-    char firstChar = get_character(&barcode[0]);
+    switch (character)
+    {
+    case '0':
+        return 0;
+    case '1':
+        return 1;
+    case '2':
+        return 2;
+    case '3':
+        return 3;
+    case '4':
+        return 4;
+    case '5':
+        return 5;
+    case '6':
+        return 6;
+    case '7':
+        return 7;
+    case '8':
+        return 8;
+    case '9':
+        return 9;
+    case '-':
+        return 10;
+    // This should not happen
+    default:
+        return 0;
+    }
+}
 
+char *scan_barcode(int *barcode, size_t size)
+/*
+This function scans a barcode
+
+@param barcode: Barcode converted to 0 and 1
+@returns: The decoded code or the error message
+*/
+{
     // Check if the barcode is reversed (The Start/Stop code coincides with the 4)
     if (get_character(barcode) == character_value[4])
     {
@@ -301,7 +348,80 @@ int scan_barcode(int *barcode, size_t size)
         for (int i = 0; i < size / 2; i++)
             swap(&barcode[i], &barcode[size - 1 - i]);
     }
-    return 1;
+
+    if (get_character(barcode) != character_value[11])
+        return error_messages[2];
+
+    // Number of characters in the barcode
+    size_t char_nums = (size - encoding_length) / (encoding_length + 1);
+    // This is the decoded code (The response)
+    char code[char_nums + 1];
+    size_t code_index = 0;
+
+    for (int i = encoding_length + 1; i < size; i += encoding_length + 1)
+    {
+        // The character-separating narrow light bar was not detected
+        if (barcode[i - 1] != 0)
+            return error_messages[2];
+
+        char next_char = get_character(&barcode[i]);
+
+        // C checking
+        if (i == size - 2 * (encoding_length + 1) - encoding_length)
+        {
+            if (next_char == character_value[10])
+                return error_messages[0];
+            int expected_C = 0;
+            for (int j = 1; j <= code_index; j++)
+            {
+                int weight = get_char_weight(code[j - 1]);
+                int number = ((code_index - j) % 10 + 1) * weight;
+                expected_C += number;
+            }
+            expected_C %= 11;
+
+            if (expected_C != get_char_weight(next_char))
+                return error_messages[0];
+        }
+
+        // K checking
+        else if (i == size - encoding_length - (encoding_length + 1))
+        {
+            if (next_char == character_value[10])
+                return error_messages[1];
+            int expected_K = 0;
+            printf("Im going to print each char\n");
+            for (int j = 1; j <= code_index; j++)
+            {
+                int weight = get_char_weight(code[j - 1]);
+                printf("The char %d is: %c weight: %d\n", j, code[j - 1], weight);
+                int number = ((code_index - j + 1) % 9 + 1) * weight;
+                expected_K += number;
+            }
+            expected_K %= 11;
+
+            printf("The value of the expected K is: %d\n", expected_K);
+
+            if (expected_K != get_char_weight(next_char))
+                return error_messages[1];
+
+            printf("The expected K value is: %d, and %c was receiverd\n", expected_K, next_char);
+        }
+
+        // Check if the last character is a start/stop character
+        else if (i == size - encoding_length && next_char != character_value[11])
+            return error_messages[2];
+
+        // Add each character to the response
+        code[code_index] = next_char;
+        code_index++;
+    }
+
+    code[code_index - 1] = '\0';
+
+    printf("The final code is: %s\n", code);
+
+    return "The code";
 }
 
 int rectify_codebar(int *barcode, size_t size)
