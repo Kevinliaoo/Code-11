@@ -9,6 +9,7 @@ char get_character(int *starting_position);
 int get_char_weight(char character);
 void copy_string(char *source, char *destination, size_t size);
 void scan_barcode(int *barcode, char *output, size_t size);
+void build_codebar(FILE *filePtr, int output[], size_t size);
 
 enum bar_color
 {
@@ -37,116 +38,49 @@ int *wide_and_narrow;
 
 int main()
 {
-    // Test cases
-    size_t test_size_1 = 59;
-    int test_data_1[59] = {
-        40,
-        82,
-        80,
-        40,
-        40,
-        40,
-        80,
-        80,
-        40,
-        40,
-        40,
-        40,
-        40,
-        40,
-        40,
-        80,
-        80,
-        40,
-        40,
-        40,
-        41,
-        80,
-        80,
-        40,
-        40,
-        39,
-        80,
-        80,
-        42,
-        40,
-        40,
-        40,
-        79,
-        40,
-        40,
-        40,
-        40,
-        40,
-        80,
-        40,
-        80,
-        40,
-        80,
-        80,
-        40,
-        40,
-        40,
-        40,
-        40,
-        80,
-        40,
-        40,
-        80,
-        40,
-        40,
-        80,
-        78,
-        40,
-        40};
+    const char *filename = "input.txt";
 
-    size_t test_size_2 = 35;
-    int test_data_2[35] = {30, 30, 31, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 29, 30, 30, 30, 30, 30, 31, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
+    FILE *file_pointer = fopen(filename, "r");
 
-    size_t test_size_3 = 35;
-    int test_data_3[35] = {
-        10,
-        10,
-        20,
-        20,
-        10,
-        10,
-        19,
-        10,
-        10,
-        20,
-        10,
-        10,
-        10,
-        10,
-        10,
-        20,
-        20,
-        10,
-        10,
-        20,
-        20,
-        10,
-        10,
-        10,
-        10,
-        10,
-        10,
-        10,
-        21,
-        10,
-        10,
-        10,
-        20,
-        19,
-        10,
-    };
+    if (file_pointer == NULL)
+        printf("File could not be opened.\n");
+    else
+    {
+        int case_number = 1;
+        int res; // Size of the barcode
+        fscanf(file_pointer, "%d", &res);
 
-    char output[200];
-    rectify_codebar(test_data_1, test_size_1);
-    scan_barcode(test_data_1, output, test_size_1);
-    printf("%s\n", output);
+        while (res != 0)
+        {
+            // Build the barcode
+            int barcode[res];
+            char output[100];
+            // Get the barcode from the file
+            build_codebar(file_pointer, barcode, res);
+            // Rectify the barcode
+            rectify_codebar(barcode, res);
+            // Get the scanning result
+            scan_barcode(barcode, output, res);
+            // Print the result in console
+            printf("Case %d: %s\n", case_number, output);
+
+            case_number++;
+
+            // Read the size of the next barcode
+            fscanf(file_pointer, "%d", &res);
+        }
+    }
 }
+
+void build_codebar(FILE *filePtr, int output[], size_t size)
+/*
+This function reads a codebar from a file, given it's size.
+*/
+{
+    for (int i = 0; i < size; i++)
+        fscanf(filePtr, "%d", &output[i]);
+}
+
 void print_codebar(int *barcode, size_t size)
 /*
 This function prints the codebar
