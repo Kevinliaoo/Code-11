@@ -27,4 +27,6 @@ Once the pre-work is successfully done, here is when the decoding process starts
 The code is organized on various functions, each of them responsible for a specific task.
 In the main function, there is a while loop in charge of reading the m digit of each piece of data, until it reads a 0 and ends the program.
 After the m is read, the function build_codebar is called, which is in charge of reading the following m characters and storing the result in an array.
-Once the data is read, the function rectify_codebar converts the wide bars and narrow bars to 1 and 0 respectively.
+Once the data is read, the function rectify_codebar converts the wide bars and narrow bars to 1 and 0 respectively. In order to do so, I used a hash table to store each bar width and it’s associated frequency value, and the most repeated two values are supposed to be the wide and narrow bars.
+The function scan_barcode is the core of the program, it’s function is to decode the message and store the result in a string. A complimentary function used here is the function get_character, that reads five bars width and gets the decoded value.
+Finally, the function prints the message on the console and scans the next m character, in order to decode the next message, and the while loop iterates all over again.
