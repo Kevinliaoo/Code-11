@@ -285,6 +285,7 @@ This function scans a barcode
             swap(&barcode[i], &barcode[size - 1 - i]);
     }
 
+    // The message does not start with the start/stop character
     if (get_character(barcode) != character_value[11])
     {
         copy_string(error_messages[2], output, strlen(error_messages[2]));
@@ -307,6 +308,13 @@ This function scans a barcode
         }
 
         char next_char = get_character(&barcode[i]);
+
+        // Get a wrong character
+        if (next_char == character_value[12])
+        {
+            copy_string(error_messages[2], output, strlen(error_messages[2]));
+            return;
+        }
 
         // C checking
         if (i == size - 2 * (encoding_length + 1) - encoding_length)
